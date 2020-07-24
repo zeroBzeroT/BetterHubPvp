@@ -1,0 +1,4 @@
+name: BetterHubPvp
+version: ${project.version}
+main: zerobzerot.betterhubpvp.BetterHubPvp
+authors: [bierdosenhalter]

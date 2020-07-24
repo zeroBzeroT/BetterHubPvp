@@ -1,0 +1,10 @@
+# BetterHubPvp Config
+# The protected-radius value specifies the pvp area.
+# #-----# ^
+# |     | |
+# |     | |  * = Spawn
+# |  *  | |
+# |     |    Arrow = radius
+# |     |
+# #-----#
+protected-radius: 500
