@@ -1,16 +1,15 @@
 package zeroBzeroT.betterhubpvp;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -18,14 +17,17 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 public class BetterHubPvp extends JavaPlugin implements Listener {
-    final static List<Material> IllegalBlocksNetherHub = Arrays.asList(Material.LAVA, Material.LAVA_BUCKET, Material.STATIONARY_LAVA);
+    final static List<Integer> weekdaysWithSpawnWithers = Arrays.asList(Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY);
+
+    final static Calendar calendar = Calendar.getInstance();
 
     File configFile;
     FileConfiguration config;
-    int radius = 500;
+    int spawnRadius = 500;
 
     @Override
     public void onEnable() {
@@ -40,14 +42,9 @@ public class BetterHubPvp extends JavaPlugin implements Listener {
         config = new YamlConfiguration();
         loadYamls();
 
-        radius = config.getInt("protected-radius");
+        spawnRadius = config.getInt("protected-radius");
 
         getServer().getPluginManager().registerEvents(this, this);
-    }
-
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
     }
 
     public void loadYamls() {
@@ -59,26 +56,28 @@ public class BetterHubPvp extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onMobSpawn(CreatureSpawnEvent e) {
-        if (e.getEntity().getType() == EntityType.PIG_ZOMBIE || e.getEntity().getType() == EntityType.WITHER) {
-            Location loc = e.getLocation();
+    public void onMobSpawn(CreatureSpawnEvent event) {
+        if (isNotAtSpawn(event.getLocation()))
+            return;
 
-            if (!witherSpawningAllowed(loc)) {
-                e.setCancelled(true);
-            }
+        if (event.getEntity().getType() == EntityType.PIG_ZOMBIE
+                || (event.getEntity().getType() == EntityType.WITHER && !weekdaysWithSpawnWithers.contains(calendar.get(Calendar.DAY_OF_WEEK)))) {
+
+            getLogger().info(ChatColor.YELLOW + "Stopped " + event.getEntity().getType().name() + " from spawning at spawn.");
+            event.setCancelled(true);
         }
     }
 
     @EventHandler
-    public void onPlaceBlock(BlockPlaceEvent event) {
-        Block block = event.getBlock();
+    public void onPlayerBucketEmpty(PlayerBucketEmptyEvent event) {
+        Location location = event.getBlockClicked().getLocation();
 
-        if (!block.getChunk().getWorld().getEnvironment().equals(World.Environment.NETHER))
+        if (isNotAtSpawn(location) || !location.getWorld().getEnvironment().equals(World.Environment.NETHER))
             return;
 
-        if (IllegalBlocksNetherHub.contains(block.getType())) {
-            event.setCancelled(true);
-        }
+        String userName = event.getPlayer().getName();
+        getLogger().info(ChatColor.YELLOW + userName + " tried to empty a bucket at the nether hub.");
+        event.setCancelled(true);
     }
 
     private void firstRun() {
@@ -106,7 +105,7 @@ public class BetterHubPvp extends JavaPlugin implements Listener {
         }
     }
 
-    public boolean witherSpawningAllowed(Location loc) {
-        return !(Math.abs(loc.getX()) < radius) || !(Math.abs(loc.getZ()) < radius);
+    public boolean isNotAtSpawn(Location loc) {
+        return !(Math.abs(loc.getX()) <= spawnRadius) || !(Math.abs(loc.getZ()) <= spawnRadius);
     }
 }

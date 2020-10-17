@@ -1,6 +1,7 @@
 # BetterHubPvp
 
 Spigot plugin to improve pvp combat especially at the nether hub.
+Withers are only allowed on weekends.
 
 ## Sources
 
